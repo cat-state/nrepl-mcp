@@ -1,0 +1,16 @@
+(import torch)
+(import [torch.nn.functional :as F])
+(import [torch.nn.attention.flex-attention :as flex-attention])
+(defn f {:decorators [torch/compile]} [x]
+  (F/relu (* x x x)))
+
+(f (-> (torch/randn 100) 
+       (.cuda)))
+
+(defn attn {:decorators [torch/compile]} [q k v]
+  (let [attn (flex-attention/flex-attention q k v)]
+    (F/relu attn)))
+
+(attn (torch/randn #py (1 1 100 64) ** :device "cuda") 
+      (torch/randn #py (1 1 100 64) ** :device "cuda")
+      (-> (torch/randn #py (1 1 100 64)) (.cuda)))
