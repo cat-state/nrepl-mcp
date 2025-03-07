@@ -287,9 +287,9 @@ def find_namespace_vars(namespace: str, ctx: Context) -> str:
                             (sort-by key)
                             (map (fn [[k v]] (str k " [macro]"))))]
           (str "Variables in namespace {namespace}:\\n"
-               (str/join "\\n" ns-vars)
+               (.join "\\n" ns-vars)
                "\\n\\nMacros in namespace {namespace}:\\n"
-               (str/join "\\n" ns-macros)))"""
+               (.join "\\n" ns-macros)))"""
     ctx.info(f"Listing vars in namespace: {namespace}")
     return eval_code(code, ctx)
 
@@ -300,7 +300,7 @@ def list_namespaces(ctx: Context) -> str:
     Returns:
         A list of available namespaces
     """
-    code = """(str/join "\n" (sort (map str (all-ns))))"""
+    code = """(.join "\n" (sort (map str (all-ns))))"""
     ctx.info("Listing all namespaces")
     return eval_code(code, ctx)
 
@@ -364,7 +364,26 @@ Basilisp is largely compatible with Clojure, with some differences:
 - Call a function: `(math/sqrt 16)`
 - Access attributes: `(. math -pi)` or `(.-pi math)`
 - Call methods: `(. obj method args)` or `(.method obj args)`
-- Create Python objects: `#py{:a 1 :b 2}`
+- Create Python objects: Use `#py [1 2 3]` for Python lists, `#py {1: 2, 3: 4}` for Python dicts, etc.
+
+### Python Library Interop
+- For PyTorch tensors, use: `(torch/tensor #py [[1.0 2.0] [3.0 4.0]])`
+- For NumPy arrays, use: 
+  ```clojure
+  (import numpy)
+  (let [arr (numpy/array #py [1 2 3 4 5])]
+    {:mean (numpy/mean arr)
+     :sum (numpy/sum arr)})
+  ```
+- For advanced Python library interop, always use `#py` for Python objects and collections
+- Access attributes using the dot operator: `(. obj -attr)` or `(.-attr obj)`
+
+### Common Gotchas and Tips
+- When creating Python data structures like lists or tensors, always use `#py` to create Python objects
+- For PyTorch tensor shape, use `(. tensor -shape)` not `(. tensor shape)`
+- Convert Python lists to Basilisp collections with `(vec py-list)` or `(set py-list)`
+- For proper argument passing, use `#py (...)` when Python expects a tuple
+- Python keyword arguments: `(f arg1 arg2 ** :keyword value1 :kw2 value2)`
 
 ### Special Features
 - Threading macros: 
@@ -390,6 +409,41 @@ Basilisp is largely compatible with Clojure, with some differences:
 (import [datetime :as dt])
 (def now (dt/datetime.now))
 (str "Current hour: " (.-hour now))
+
+;; PyTorch example
+(import torch)
+(let [tensor (torch/tensor #py [[1.0 2.0] [3.0 4.0]])]
+  {:shape (.-shape tensor)
+   :sum (torch/sum tensor)
+   :mean (torch/mean tensor)})
+```
+
+## Best Practices for Working with Python Libraries
+
+### PyTorch
+```clojure
+;; Import PyTorch
+(import torch)
+(import [torch.nn :as nn])
+(import [torch.nn.functional :as F])
+
+;; Create tensors (always use #py for data)
+(def tensor (torch/tensor #py [[1.0 2.0] [3.0 4.0]]))
+
+;; Access tensor properties
+(.-shape tensor)      ;; Get shape
+(.-device tensor)     ;; Get device
+(.-dtype tensor)      ;; Get data type
+
+;; Basic operations
+(torch/add tensor tensor)  ;; Add tensors
+(torch/mul tensor 2.0)     ;; Multiply by scalar
+(torch/matmul tensor tensor)  ;; Matrix multiplication
+
+;; Neural network operations
+(def linear (nn/Linear 10 5))
+(def x (torch/randn #py [32 10]))
+(def output (linear x))
 ```
 
 If you need help with Basilisp syntax or functionality, you can use the documentation tools or try examples.
@@ -445,8 +499,46 @@ You have several tools to interact with the Basilisp REPL:
 - Call a function: `(math/sqrt 16)`
 - Access attributes: `(. math -pi)` or `(.-pi math)`
 - Call methods: `(. obj method args)` or `(.method obj args)`
-- Create Python objects: `#py{:a 1 :b 2}`
+- Create Python objects: Use `#py [1 2 3]` for Python lists, `#py {1: 2, 3: 4}` for Python dicts
 - Decorators: `(defn f {:decorators [decorator/here]} [x] ...)`
+
+### Python Libraries Interop
+- For PyTorch tensors: `(torch/tensor #py [[1.0 2.0] [3.0 4.0]])`
+- For NumPy arrays: 
+  ```clojure
+  (import numpy)
+  (let [arr (numpy/array #py [1 2 3 4 5])]
+    {:mean (numpy/mean arr)
+     :sum (numpy/sum arr)})
+  ```
+- For proper argument passing, use `#py (...)` when Python expects a tuple
+- Python keyword arguments: `(f arg1 arg2 ** :keyword value1 :kw2 value2)`
+
+### PyTorch Examples
+```clojure
+;; Import PyTorch
+(import torch)
+(import [torch.nn :as nn])
+(import [torch.nn.functional :as F])
+
+;; Create tensors (always use #py for data)
+(def tensor (torch/tensor #py [[1.0 2.0] [3.0 4.0]]))
+
+;; Access tensor properties
+(.-shape tensor)      ;; Get shape
+(.-device tensor)     ;; Get device
+(.-dtype tensor)      ;; Get data type
+
+;; Basic operations
+(torch/add tensor tensor)  ;; Add tensors
+(torch/mul tensor 2.0)     ;; Multiply by scalar
+(torch/matmul tensor tensor)  ;; Matrix multiplication
+
+;; Neural network operations
+(def linear (nn/Linear 10 5))
+(def x (torch/randn #py [32 10]))
+(def output (linear x))
+```
 
 ### Special Features
 - Threading macros: 
@@ -470,6 +562,13 @@ You have several tools to interact with the Basilisp REPL:
 - `if`, `when`, `cond`, `case`, `condp`
 - `loop`, `recur`, `for`, `doseq`, `dotimes`
 - `try`, `catch`, `finally`, `throw`
+
+## Common Gotchas and Tips
+- When creating Python data structures like lists or tensors, always use `#py` to create Python objects
+- For PyTorch tensor shape, use `(. tensor -shape)` not `(. tensor shape)`
+- Convert Python lists to Basilisp collections with `(vec py-list)` or `(set py-list)`
+- For proper argument passing, use `(tuple [...])` when Python expects a tuple
+- Python keyword arguments: `(f :keyword value)` or `(f (kwargs :keyword value))`
 
 ## Resources
 - For more details on any function, use `(get_docs function-name)`
