@@ -1,6 +1,7 @@
 # Basilisp nREPL MCP Bridge
 
 This project provides a bridge between Anthropic's Model Control Protocol (MCP) and Basilisp's nREPL server, allowing Claude to interact directly with a Basilisp REPL.
+Actually, it should work with any nREPL, but the current prompts are Basilisp focused.
 
 ## Features
 
@@ -15,7 +16,8 @@ This project provides a bridge between Anthropic's Model Control Protocol (MCP) 
 ## Requirements
 
 - Python 3.8+
-- Basilisp
+- uv
+- Basilisp (optional, should work with any nREPL)
 - MCP Python SDK
 - pygments (for syntax highlighting)
 
