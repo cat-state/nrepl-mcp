@@ -5,21 +5,17 @@ Actually, it should work with any nREPL, but the current prompts are Basilisp fo
 
 ## Features
 
-- Execute Basilisp code and receive pretty-printed, syntax-highlighted results
-- Get documentation for Basilisp symbols
+- Execute code and receive pretty-printed, syntax-highlighted results
+- Get documentation for symbols
 - List all available namespaces
 - Find all variables in a namespace
 - Check nREPL server connectivity
-- Python interop with proper syntax for attribute access and method calls
+- Basilisp: Python interop with proper syntax for attribute access and method calls
 - Enhanced error reporting and formatting
 
 ## Requirements
-
-- Python 3.8+
 - uv
-- Basilisp (optional, should work with any nREPL)
-- MCP Python SDK
-- pygments (for syntax highlighting)
+- [basilisp](https://github.com/basilisp-lang/basilisp)
 
 ## Usage
 
